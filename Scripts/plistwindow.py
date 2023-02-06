@@ -2343,7 +2343,33 @@ class PlistWindow(tk.Toplevel):
         elif isinstance(value, (list,tuple)):
             self._tree.item(i, open=True)
             for (key,val) in enumerate(value):
-                self.add_node(val, i, key)
+                pat = ""
+                ena = ""
+                if True: # OC show kext/aml value here
+                    try:
+                        for inner_tup in list(value[key].items()):
+                            if inner_tup[0] == "Path":
+                                pat = inner_tup[1]
+                                continue
+                            if inner_tup[0] == "BundlePath":
+                                pat = inner_tup[1]
+                                continue
+                            if not pat and inner_tup[0] == "Comment":
+                                pat = inner_tup[1]
+                                continue
+                            if inner_tup[0] == "Enabled":
+                                if inner_tup[1]:
+                                    ena = "• "
+                                else:
+                                    ena = "  "
+                        if not pat:
+                            pat = str(key)
+                    except:
+                        pat = str(key)
+                        ena = ""
+                else:
+                    pat=str(key)
+                self.add_node(val, i, ena + pat)
         elif self.is_data(value):
             self._tree.item(i, values=(self.get_type(value),self.get_data(value),"" if parentNode == "" else self.drag_code,))
         elif isinstance(value, datetime.datetime):
@@ -3216,13 +3242,13 @@ class PlistWindow(tk.Toplevel):
     def show_config_info(self, event = None):
         # find the path of selected cell
         cell = "" if not len(self._tree.selection()) else self._tree.selection()[0]
+#        search_list = [x for x in self.split(self.get_cell_path(cell)) if not x=="*"] # Strip *
         # don't strip * - needed to differentiate sub section from subsub section
-        search_list = self.split(self.get_cell_path(cell))
+        search_list = [x for x in self.split(self.get_cell_path(cell))]
         # but remove it if it's the last item
-        if search_list and search_list[-1] == "*":
+        if search_list[-1] == "*":
             search_list.pop()
-        if search_list and search_list[0] == "Root":
-            search_list = search_list[1:] # Remove "Root"
+        if search_list and search_list[0] == "Root": search_list = search_list[1:] # Remove "Root"
         if not search_list: # nothing to search for
             return
 
